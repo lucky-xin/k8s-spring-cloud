@@ -100,10 +100,10 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ENDPOINT:datainsights-register:8848}
+        server-addr: ${NACOS_ENDPOINT:datainsights-register-svc:80}
         cluster-name: ${CLOUD_CLUSTER:DEFAULT}
       config:
-        server-addr: ${spring.cloud.nacos.discovery.server-addr} # 此配置等于${NACOS_ENDPOINT:datainsights-register:8848}
+        server-addr: ${spring.cloud.nacos.discovery.server-addr} # 此配置等于${NACOS_ENDPOINT:datainsights-register-svc:80}
         file-extension: yml
         shared-dataids: application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension} #此配置等于application-dev.yaml
   profiles:
@@ -118,12 +118,11 @@ spring:
 jasypt:
   encryptor:
     password: ${JASYPT_PWD:hello}
-# redis 相关
 spring:
   cloud:
     sentinel:
       transport:
-        dashboard: ${SENTINEL_DASHBOARD_ENDPOINT:192.168.31.90:30888}
+        dashboard: ${SENTINEL_DASHBOARD_ENDPOINT:datainsights-sentinel-svc:80}
       datasource:
         ds:
           nacos:
@@ -132,16 +131,16 @@ spring:
             group-id: ${spring.cloud.nacos.discovery.cluster-name}
             rule-type: FLOW
   zipkin:
-    base-url: http://${ZIPKIN_ENDPOINT:192.168.31.90:30411}
+    base-url: http://${ZIPKIN_ENDPOINT:datainsights-zipkin-svc:80}
   sleuth:
     sampler:
       percentage: 1
   redis:
     password: ${REDIS_PWD:我是密码}
-    host: ${REDIS_HOST:我是IP:30637}
-    port: ${REDIS_PORT:6379}
+    host: ${REDIS_HOST:我是IP}
+    port: ${REDIS_PORT:30637}
   tx-manager:
-    endpoint: ${TX_MANAGER_ENDPOINT:192.168.31.90:5004}
+    endpoint: ${TX_MANAGER_ENDPOINT:datainsights-tx-manager-svc:80}
     load-balancer: ${TX_MANAGER_LOAD_BALANCE:false}
   log:
     dir: ${LOG_DIR:/var/datainsights-log}
@@ -209,7 +208,7 @@ security:
         - /v2/api-docs
     resource:
       loadBalanced: true
-      token-info-uri: http://${AUTH2_ENDPOINT:datainsights-auth:3000}/oauth/check_token
+      token-info-uri: http://${AUTH2_ENDPOINT:datainsights-auth-svc:80}/oauth/check_token
 ```
 ### 微服务datainsights-minio-endpoint自己的那一份配置在配置中心nacos之中,名称为datainsights-minio-endpoint-dev.yaml配置如下
 ```yaml
@@ -224,7 +223,7 @@ security:
         - /actuator/**
         - /v2/api-docs
       resource:
-      token-info-uri: http://${AUTH2_ENDPOINT:datainsights-auth:3000}/oauth/check_token
+      token-info-uri: http://${AUTH2_ENDPOINT:datainsights-auth-svc:80}/oauth/check_token
 # 文件系统 
 minio:
   url: https://${MINIO_ENDPOINT:minio.datainsights.biz}
