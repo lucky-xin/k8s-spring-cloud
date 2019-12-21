@@ -14,7 +14,6 @@ data:
       json.add_error_key: true
       paths:
         - /var/datainsights-logs/*/info.json
-
     output.kafka:
       enable: true
       hosts: ["${KAFKA_HOSTS}"]

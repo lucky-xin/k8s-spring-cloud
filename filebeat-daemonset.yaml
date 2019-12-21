@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: filebeat-endpoint
-          image: 192.168.10.82:5555/filebeat
+          image: xin8docker/filebeat
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -33,7 +33,6 @@ spec:
             - name: config
               mountPath: /usr/share/filebeat/filebeat.yml
               readOnly: true
-              subPath: filebeat.yml
             - name: log-volume
               mountPath: /var/datainsights-logs/
       volumes:
