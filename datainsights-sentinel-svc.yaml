@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: datainsights-sentinel-svc
+spec:
+  selector:
+    app: datainsights-sentinel-endpoint
+    env: prod
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8888
+      nodePort: 30888
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datainsights-sentinel-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datainsights-sentinel-endpoint
+      env: prod
+  template:
+    metadata:
+      labels:
+        app: datainsights-sentinel-endpoint
+        env: prod
+    spec:
+      containers:
+        - name: datainsights-sentinel-endpoint
+          image: 192.168.10.82:5555/datainsights-sentinel:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: "483Mi"
+              cpu: "200m"
+          envFrom:
+            - configMapRef:
+                name: spring-cloud-config
+            - secretRef:
+                name: spring-cloud-secret
+          env:
+            - name: HEAP_SIZE
+              value: 483m
+            - name: SERVER_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - name: http-port
+              containerPort: 8888
+          readinessProbe:
+            tcpSocket:
+              port: http-port
+            initialDelaySeconds: 200
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http-port
+            initialDelaySeconds: 200
+            periodSeconds: 5
+          volumeMounts:
+            - name: log-volume
+              mountPath: /var/datainsights-logs/datainsights-sentinel
+      volumes:
+        - name: log-volume
+          hostPath:
+            path: /private/var/datainsights-logs/datainsights-sentinel
+            type: DirectoryOrCreate

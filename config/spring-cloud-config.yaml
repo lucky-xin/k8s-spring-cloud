@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spring-cloud-config
+data:
+  CLOUD_CLUSTER: DEFAULT
+
+  NACOS_ENDPOINT: "datainsights-register-svc:80"
+  AUTH2_ENDPOINT: "datainsights-auth-svc:80"
+  UPMS_BIZ_ENDPOINT: "datainsights-upms-svc:80"
+  TX_MANAGER_ENDPOINT: "datainsights-tx-manager-svc:80"
+  ZIPKIN_ENDPOINT: "datainsights-zipkin-svc:80"
+  SENTINEL_DASHBOARD_ENDPOINT: "datainsights-sentinel-svc:80"
+
+  MYSQL_HOST: 192.168.31.90
+  MYSQL_PORT: "3306"
+
+  LOG_DIR: /var/datainsights-logs
+
+  REDIS_HOST: redis
+  REDIS_PORT: "30637"

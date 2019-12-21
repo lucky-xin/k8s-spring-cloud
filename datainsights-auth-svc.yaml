@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: datainsights-auth-svc
+spec:
+  selector:
+    app: datainsights-auth-endpoint
+    env: prod
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 30000
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datainsights-auth-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datainsights-auth-endpoint
+      env: prod
+  template:
+    metadata:
+      labels:
+        app: datainsights-auth-endpoint
+        env: prod
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: datainsights-auth-endpoint
+          image: 192.168.10.82:5555/datainsights-auth:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: "640Mi"
+              cpu: "400m"
+          envFrom:
+            - configMapRef:
+                name: spring-cloud-config
+            - secretRef:
+                name: spring-cloud-secret
+          env:
+            - name: HEAP_SIZE
+              value: 640m
+          ports:
+            - name: http-port
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              port: http-port
+              path: /actuator/health
+            initialDelaySeconds: 120
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              port: http-port
+              path: /actuator/health
+            initialDelaySeconds: 120
+            periodSeconds: 5
+          volumeMounts:
+            - name: log-volume
+              mountPath: /var/datainsights-logs/datainsights-auth
+      volumes:
+        - name: log-volume
+          hostPath:
+            path: /private/var/datainsights-logs/datainsights-auth
+            type: DirectoryOrCreate
+      initContainers:
+        - name: init
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: WAIT_SERVICE
+              value: datainsights-tx-manager-svc
+          command:
+            - "sh"
+            - "-c"
+            - |
+              until nc -w 2 -z $(WAIT_SERVICE) 80; do
+                echo Waiting for $(WAIT_SERVICE) initialization to complete..
+                sleep 10
+              done
+              echo $(WAIT_SERVICE) Initialization successful!

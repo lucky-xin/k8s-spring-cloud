@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: datainsights-register-svc
+spec:
+  selector:
+    app: datainsights-register-endpoint
+    env: prod
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8848
+      nodePort: 30848
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datainsights-register-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datainsights-register-endpoint
+      env: prod
+  template:
+    metadata:
+      labels:
+        app: datainsights-register-endpoint
+        env: prod
+    spec:
+      containers:
+        - name: datainsights-register-endpoint
+          image: 192.168.10.82:5555/datainsights-register:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: "578Mi"
+              cpu: "400m"
+          envFrom:
+            - configMapRef:
+                name: spring-cloud-config
+            - secretRef:
+                name: spring-cloud-secret
+          env:
+            - name: HEAP_SIZE
+              value: 578m
+          ports:
+            - name: http-port
+              containerPort: 8848
+          readinessProbe:
+            httpGet:
+              port: http-port
+              path: /nacos/v1/console/health/readiness
+            initialDelaySeconds: 100
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              port: http-port
+              path: /nacos/v1/console/health/liveness
+            initialDelaySeconds: 100
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: log-volume
+              mountPath: /var/datainsights-logs/datainsights-register
+      volumes:
+        - name: log-volume
+          hostPath:
+            path: /private/var/datainsights-logs/datainsights-register
+            type: DirectoryOrCreate
+      initContainers:
+        - name: init
+          imagePullPolicy: Always
+          env:
+            - name: WAIT_SERVICE
+              value: datainsights-sentinel-svc
+          image: busybox
+          command:
+            - "sh"
+            - "-c"
+            - |
+              until nc -w 2 -z $(WAIT_SERVICE) 80; do
+                echo Waiting for $(WAIT_SERVICE) initialization to complete..
+                sleep 10
+              done
+              echo $(WAIT_SERVICE) Initialization successful!

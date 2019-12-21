@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat-deployment
+spec:
+  selector:
+    matchLabels:
+      app: filebeat-endpoint
+      env: prod
+  template:
+    metadata:
+      labels:
+        app: filebeat-endpoint
+        env: prod
+    spec:
+      containers:
+        - name: filebeat-endpoint
+          image: 192.168.10.82:5555/filebeat
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+          envFrom:
+            - configMapRef:
+                name: spring-cloud-config
+            - secretRef:
+                name: spring-cloud-secret
+          env:
+            - name: KAFKA_HOSTS
+              value: 192.168.10.82:9092
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/filebeat/filebeat.yml
+              readOnly: true
+              subPath: filebeat.yml
+            - name: log-volume
+              mountPath: /var/datainsights-logs/
+      volumes:
+        - name: config
+          configMap:
+            defaultMode: 0600
+            name: filebeat-config
+        - name: log-volume
+          hostPath:
+            path: /private/var/datainsights-logs
+            type: DirectoryOrCreate

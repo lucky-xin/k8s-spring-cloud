@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.spring.application.name }}-deploy
+  labels:
+    app: {{ .Values.spring.application.name }}-endpoint
+    env: prod
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.spring.application.name }}-endpoint
+      env: prod
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.spring.application.name }}-endpoint
+        env: prod
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "springcloud.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.spring.application.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ .Values.image.repository }}/{{ .Values.spring.application.name }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{.Values.spring.server.port}}
+              protocol: TCP
+          envFrom:
+              - configMapRef:
+                  name: spring-cloud-config
+              - secretRef:
+                  name: spring-cloud-secret
+          env:
+            - name: MIN_HEAP
+              value: {{ .Values.resources.minHeap | default "200m"}}
+            - name: MAX_HEAP
+              value: {{ .Values.resources.maxHeap | default "200m" }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: log-volume
+              mountPath: {{ .Values.spring.log.dir | default "/var/datainsights-logs" }}/{{ .Values.spring.application.name }}
+      volumes:
+          - name: log-volume
+            hostPath:
+              path: {{.Values.spring.log.dir | default "/var/datainsights-logs"}}/{{.Values.spring.application.name}}
+              type: DirectoryOrCreate
+      initContainers:
+          - name: init
+            imagePullPolicy: IfNotPresent
+            image: busybox
+            env:
+              - name: WAIT_SERVICE
+                  {{ .Values.waitService }}
+            command:
+              - "sh"
+              - "-c"
+              - |
+                until nc -w 2 -z $(WAIT_SERVICE) 80; do
+                  echo Waiting for $(WAIT_SERVICE) initialization to complete...
+                  sleep 10
+                done
+                echo $(WAIT_SERVICE) Initialization successful!
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

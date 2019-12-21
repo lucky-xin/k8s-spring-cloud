@@ -1,0 +1,84 @@
+replicaCount: 1
+spring:
+  log:
+    dir: "/var/datainsights-log"
+
+  application:
+    name: datainsights-auth
+
+  server:
+    port: 3000
+resource:
+  limit:
+    memory: 500Mi
+    cpu: 500m
+  min_heap: "512m"
+  max_heap: "512m"
+
+image:
+  repository: 192.168.10.82:5555
+  tag: 4.0.0
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+readinessProbe:
+  httpGet:
+    port: http-port
+    path: /actuator/health
+  initialDelaySeconds: 180
+  periodSeconds: 5
+
+livenessProbe:
+  httpGet:
+    port: http-port
+    path: /actuator/health
+  initialDelaySeconds: 180
+  periodSeconds: 5
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+
+service:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 30000
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths: []
+
+  tls: []
+
+resources:
+  limits:
+    cpu: 400m
+    memory: 512Mi
+  minHeap: 512m
+  maxHeap: 512m
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+waitService: datainsights-register-svc
+
+

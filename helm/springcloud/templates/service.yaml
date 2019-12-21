@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.spring.application.name}}
+  labels:
+    app: {{ .Values.spring.application.name }}-endpoint
+    env: prod
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: {{ .Values.spring.application.name }}-endpoint
+    env: prod
+  ports:
+    {{- toYaml .Values.service.ports | nindent 12 }}
