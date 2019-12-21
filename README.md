@@ -211,7 +211,7 @@ security:
       loadBalanced: true
       token-info-uri: http://${AUTH2_ENDPOINT:datainsights-auth:3000}/oauth/check_token
 ```
-### 微服务datainsights-minio-endpoint自己的那一份配置在配置中心nacos之中配置如下
+### 微服务datainsights-minio-endpoint自己的那一份配置在配置中心nacos之中,名称为datainsights-minio-endpoint-dev.yaml配置如下
 ```yaml
 ## spring security 配置
 security:
@@ -224,7 +224,7 @@ security:
         - /actuator/**
         - /v2/api-docs
       resource:
-      token-info-uri: http://${AUTH_ENFDPOINT:datainsights-auth:3000}/oauth/check_token
+      token-info-uri: http://${AUTH2_ENDPOINT:datainsights-auth:3000}/oauth/check_token
 # 文件系统 
 minio:
   url: https://${MINIO_ENDPOINT:minio.datainsights.biz}
