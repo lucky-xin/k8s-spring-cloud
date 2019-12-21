@@ -63,3 +63,4 @@ gen_code
 
 ### node ###
 node_modules
+/.idea/
